@@ -75,4 +75,4 @@ jobs:
         run: |
           docker image tag ${{ steps.variables.outputs.artifactory_image_name }} ${{ steps.variables.outputs.image_name }}
           docker push ${{ steps.variables.outputs.image_name }}
-          
+

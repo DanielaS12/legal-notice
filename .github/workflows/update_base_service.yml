@@ -1,0 +1,31 @@
+name: Update Base Service
+
+on:
+  repository_dispatch:
+    types: UpdateBaseService
+
+jobs:
+  main:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout 
+        uses: actions/checkout@main
+        with:
+          ref: ${{ github.event.client_payload.branch }}
+
+      - name: Write Orca Version
+        env:
+          VERSION: ${{ github.event.client_payload.version }}
+        run: |
+          sed -i "s/baseServiceVersion=${SWAP}.*/baseServiceVersion=${VERSION}/" gradle.properties
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v3
+        with:
+          token: ${{ secrets.ASTROLABE_GITHUB_TOKEN }}
+          commit-message: "chore(cd): update base orca version to ${{ github.event.client_payload.version }}"
+          branch: ${{ github.event.client_payload.version }}
+          branch-suffix: timestamp
+          title: "chore(cd): update base orca version to ${{ github.event.client_payload.version }}"
+          labels: |
+            baseServiceUpdate

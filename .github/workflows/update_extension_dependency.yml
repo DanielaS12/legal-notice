@@ -1,0 +1,32 @@
+name: Update Extension Dependency
+
+on:
+  repository_dispatch:
+    types: BumpExtensionDependency
+
+jobs:
+  main:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@main
+        with:
+          ref: ${{ github.event.client_payload.branch }}
+
+      - name: Write Armory Commons Version
+        env:
+          VERSION: ${{ github.event.client_payload.version }}
+          PROPERTY_NAME: ${{ github.event.client_payload.propertyName }}
+        run: |
+          sed -i "s/${PROPERTY_NAME}=${SWAP}.*/${PROPERTY_NAME}=${VERSION}/" gradle.properties
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v3
+        with:
+          token: ${{ secrets.ASTROLABE_GITHUB_TOKEN }}
+          commit-message: "chore(cd): update armory-commons version to ${{ github.event.client_payload.version }}"
+          branch: ${{ github.event.client_payload.version }}
+          branch-suffix: timestamp
+          title: "chore(cd): update armory-commons version to ${{ github.event.client_payload.version }}"
+          labels: |
+            extensionDependencyUpdate

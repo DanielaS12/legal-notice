@@ -5,7 +5,7 @@ plugins {
 
 group = 'io.armory.spinnaker.legal-notice'
 version = '0.0.1-SNAPSHOT'
-sourceCompatibility = '17'
+sourceCompatibility = '11'
 
 configurations {
     compileOnly {
@@ -25,7 +25,7 @@ repositories {
 }
 
 dependencies {
-    implementation 'org.springframework:spring-context:6.0.6'
+    implementation 'org.springframework:spring-context:5.3.24'
     implementation 'org.slf4j:slf4j-api:2.0.5'
     compileOnly 'org.projectlombok:lombok:1.18.26'
     annotationProcessor 'org.projectlombok:lombok:1.18.26'
