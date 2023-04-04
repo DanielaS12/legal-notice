@@ -9,15 +9,10 @@ on:
 jobs:
   publish_images:
     env:
-      ORG_GRADLE_PROJECT_artifactory_user: ${{secrets.ARTIFACTORY_USER}}
-      ORG_GRADLE_PROJECT_artifactory_password: ${{secrets.ARTIFACTORY_PASSWORD}}
       ARTIFACTORY_USER: ${{ secrets.ARTIFACTORY_USER }}
       ARTIFACTORY_PASSWORD: ${{ secrets.ARTIFACTORY_PASSWORD }}
     runs-on: ubuntu-latest
     steps:
-      - name: Fix up git URLs
-        run: echo -e '[url "https://github.com/"]\n  insteadOf = "git://github.com/"' >> ~/.gitconfig
-
       - name: Checkout Code
         uses: actions/checkout@v2
 
@@ -29,34 +24,22 @@ jobs:
         with:
           java-version: 11
 
-      - name: Set up Node
-        uses: actions/setup-node@v1
-        with:
-          node-version: 12.16.3
-
       - name: Setup JFrog CLI
         uses: jfrog/setup-jfrog-cli@v1
 
       - name: Generate Variables
         id: variables
         uses: armory-io/astrolabe-build-defaults@main
-        with:
-          red_hat_pid: ${{ secrets.REDHAT_PID }}
-
-      - name: NPM Auth
-        run: |
-          echo 'registry=https://armory.jfrog.io/artifactory/api/npm/npm-all/' > ~/.npmrc
-          curl -u${ARTIFACTORY_USER}:${ARTIFACTORY_PASSWORD} https://armory.jfrog.io/artifactory/api/npm/auth >> ~/.npmrc
-
-      - name: Build
-        run: |
-          yarn --registry https://armory.jfrog.io/artifactory/api/npm/npm-all/ --frozen-lockfile
-          yarn test
-          yarn build --deck-version ${{ steps.variables.outputs.version }}
 
       - name: Build Image
         run: |
-          docker build -t ${{ steps.variables.outputs.artifactory_image_name }} .
+          ./gradlew docker \
+            -PcdBuild=true \
+            -PimageName=${{ steps.variables.outputs.artifactory_image_name }} \
+            -Pversion=${{ steps.variables.outputs.version }} \
+            -Partifactory_user=${ARTIFACTORY_USER} \
+            -Partifactory_password=${ARTIFACTORY_PASSWORD} \
+            -Prelease.version=${{ steps.variables.outputs.version_as_semver }}
 
       - name: Publish Image To Artifactory
         run: |
@@ -64,10 +47,13 @@ jobs:
             --url ${{ steps.variables.outputs.artifactory_url }} \
             --user ${ARTIFACTORY_USER} \
             --password ${ARTIFACTORY_PASSWORD}
+
           jfrog rt dp ${{ steps.variables.outputs.artifactory_image_name }} ${{ steps.variables.outputs.artifactory_docker_repository }} \
             --build-name=${{ steps.variables.outputs.build_name }} \
             --build-number=${{ steps.variables.outputs.build_number }}
+
           jfrog rt bag ${{ steps.variables.outputs.build_name }} ${{ steps.variables.outputs.build_number }}
+
           jfrog rt bp ${{ steps.variables.outputs.build_name }} ${{ steps.variables.outputs.build_number }} \
             --build-url=${{ steps.variables.outputs.build_url }}
 
@@ -89,3 +75,4 @@ jobs:
         run: |
           docker image tag ${{ steps.variables.outputs.artifactory_image_name }} ${{ steps.variables.outputs.image_name }}
           docker push ${{ steps.variables.outputs.image_name }}
+          
