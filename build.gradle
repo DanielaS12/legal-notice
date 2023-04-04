@@ -15,6 +15,13 @@ configurations {
 
 repositories {
     mavenCentral()
+    maven {
+        url 'https://armory.jfrog.io/artifactory/gradle-dev'
+        credentials {
+            username = "${artifactory_user}"
+            password = "${artifactory_password}"
+        }
+    }
 }
 
 dependencies {
