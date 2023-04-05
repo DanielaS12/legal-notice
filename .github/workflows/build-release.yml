@@ -1,0 +1,55 @@
+name: Build, Publish Release
+on:
+  release:
+    types: [released]
+
+jobs:
+  build-and-publish-release:
+    env:
+      GRGIT_USER: GitHub
+      GRGIT_PASS: ${{ secrets.GITHUB_TOKEN }}
+      GRADLE_ARGS: -Partifactory_user=${{secrets.ARTIFACTORY_USER}} -Partifactory_password=${{secrets.ARTIFACTORY_TOKEN}}
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions/setup-java@v1
+        with:
+          java-version: 17
+
+      - name: Login to Artifactory
+        run: |
+          docker login -u ${{secrets.ARTIFACTORY_USER}} -p ${{secrets.ARTIFACTORY_TOKEN}} armory-docker-local.jfrog.io
+        shell: bash
+
+      - name: Publish To Artifactory
+        id: publish
+        env:
+          VAULT_ADDR: ${{ secrets.VAULT_ADDR }}
+          VAULT_TOKEN: ${{ secrets.VAULT_TOKEN }}
+        run: |
+          wget --quiet https://releases.hashicorp.com/vault/1.5.5/vault_1.5.5_linux_amd64.zip
+          unzip vault_1.5.5_linux_amd64.zip && rm -rf vault_1.5.5_linux_amd64.zip
+          mv ./vault /usr/local/bin/ && chmod +x /usr/local/bin/vault
+          export OAUTH_SECRETS=$(vault kv get -field="oauth2-creds"  admin-secret/enterprise/armory-enterprise-console/okta-dev-200769)
+          echo "::add-mask::${OAUTH_SECRETS}"
+          echo $OAUTH_SECRETS > ${HOME}/application.properties
+          ./gradlew --no-build-cache build -x check dockerPush $GRADLE_ARGS
+          echo "BUILD_NUMBER=$(./gradlew $GRADLE_ARGS  printVersionNumber|grep VERSION|awk -F: '{print $2}')" >> $GITHUB_ENV
+
+      - name: Publish Core To Artifactory
+        id: publish_core
+        run: |
+          echo "BUILD_NUMBER=$(./gradlew $GRADLE_ARGS  printVersionNumber|grep VERSION|awk -F: '{print $2}')" >> $GITHUB_ENV
+          ./gradlew --no-build-cache build artifactoryPublish $GRADLE_ARGS
+
+      - name: Scan Using Aquasec
+        uses: armory-io/aquasec-scan-action@v0.0.10
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          username: ${{ secrets.AQUA_USER }}
+          password: ${{ secrets.AQUA_PASSWORD }}
+          url: https://aquasec.armory.io
+          registry: Artifactory
+          image: armory/armory-enterprise-console:${{env.BUILD_NUMBER}}
