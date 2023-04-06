@@ -30,3 +30,10 @@ dependencies {
     compileOnly 'org.projectlombok:lombok:1.18.26'
     annotationProcessor 'org.projectlombok:lombok:1.18.26'
 }
+
+task releaseBundle(type: Jar){
+    from("src/main/java")
+    from("src/main/resources")
+    archiveName("legal-notice.jar")
+    destinationDir(file('build/distributions'))
+}
