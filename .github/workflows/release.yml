@@ -3,7 +3,7 @@ name: Release
 on:
   push:
     tags:
-    - 'v*'
+      - 'v*'
 
 jobs:
   build:
@@ -69,14 +69,3 @@ jobs:
           asset_path: ./build/distributions/${{ steps.get_project_info.outputs.PROJECT }}-${{ steps.get_project_info.outputs.VERSION }}.zip
           asset_name: ${{ steps.get_project_info.outputs.PROJECT }}-${{ steps.get_project_info.outputs.VERSION }}.zip
           asset_content_type: application/zip
-
-      - name: add release to plugin repo
-        id: add-release
-        uses: armory-io/plugin-metadata-updater@master
-        env:
-          JAVA_HOME: ''
-          GITHUB_OAUTH: ${{ secrets.TOKEN }}
-        with:
-          metadata: build/distributions/plugin-info.json
-          binary_url: https://github.com/${{ steps.get_project_info.outputs.RELEASE_REPO }}/releases/download/${{ steps.get_project_info.outputs.VERSION }}/${{ steps.get_project_info.outputs.PROJECT }}-${{ steps.get_project_info.outputs.VERSION }}.zip
-          metadata_repo_url: https://github.com/armory-plugins/pluginRepository

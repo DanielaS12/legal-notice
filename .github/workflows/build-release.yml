@@ -1,0 +1,25 @@
+name: Build, Publish Release
+on:
+  release:
+    types: [released]
+
+jobs:
+  build-and-publish-release:
+    env:
+      GRGIT_USER: GitHub
+      GRGIT_PASS: ${{ secrets.GITHUB_TOKEN }}
+      GRADLE_ARGS: -Partifactory_user=${{secrets.ARTIFACTORY_USER}} -Partifactory_password=${{secrets.ARTIFACTORY_TOKEN}}
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions/setup-java@v1
+        with:
+          java-version: 17
+
+      - name: Publish Core To Artifactory
+        id: publish_core
+        run: |
+          echo "BUILD_NUMBER=$(./gradlew $GRADLE_ARGS  printVersionNumber|grep VERSION|awk -F: '{print $2}')" >> $GITHUB_ENV
+          ./gradlew --no-build-cache build artifactoryPublish $GRADLE_ARGS
+          
