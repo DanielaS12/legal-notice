@@ -1,6 +1,7 @@
 plugins {
     id 'java'
     id 'io.spring.dependency-management' version '1.1.0'
+    id "com.jfrog.artifactory" version "4.24.20"
 }
 
 group = 'io.armory.spinnaker.legal-notice'
@@ -24,16 +25,36 @@ repositories {
     }
 }
 
+def artifactoryUser = project.hasProperty('artifactory_user') ? project.artifactory_user : System.getenv('ARTIFACTORY_USER') ?: ''
+def artifactoryToken = project.hasProperty('artifactory_password') ? project.artifactory_password : System.getenv('ARTIFACTORY_TOKEN') ?: ''
+
 dependencies {
     implementation 'org.springframework:spring-context:5.3.24'
     implementation 'org.slf4j:slf4j-api:2.0.5'
     compileOnly 'org.projectlombok:lombok:1.18.26'
     annotationProcessor 'org.projectlombok:lombok:1.18.26'
 }
+apply plugin: "com.jfrog.artifactory"
+artifactoryPublish.skip = true
+    artifactory {
+        publish {
+            contextUrl = 'https://armory.jfrog.io/armory'
+            repository {
+                repoKey = 'gradle-dev-local'
+                username = artifactoryUser
+                password = artifactoryToken
+            }
+            defaults {
+                publications 'nebula'
+            }
+        }
 
-task releaseBundle(type: Jar){
-    from("src/main/java")
-    from("src/main/resources")
-    archiveName("legal-notice.jar")
-    destinationDir(file('build/distributions'))
-}
+    }
+    task printVersion() {
+        doLast {
+            logger.lifecycle("resolved version ${rootProject.getVersion()}")
+        }
+    }
+
+    tasks.artifactoryPublish.dependsOn 'printVersion'
+
