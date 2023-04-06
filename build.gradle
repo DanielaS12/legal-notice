@@ -25,6 +25,12 @@ repositories {
     }
 }
 
+task printVersionNumber() {
+    doLast {
+        println("VERSION:" + project.getVersion())
+    }
+}
+
 def artifactoryUser = project.hasProperty('artifactory_user') ? project.artifactory_user : System.getenv('ARTIFACTORY_USER') ?: ''
 def artifactoryToken = project.hasProperty('artifactory_password') ? project.artifactory_password : System.getenv('ARTIFACTORY_TOKEN') ?: ''
 
