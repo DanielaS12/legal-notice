@@ -4,7 +4,6 @@ plugins {
     id "com.jfrog.artifactory" version "4.24.20"
 }
 
-group = 'io.armory.spinnaker.legal-notice'
 version = project.getVersion()
 sourceCompatibility = '11'
 
