@@ -9,7 +9,7 @@ jobs:
       GRGIT_USER: GitHub
       GRGIT_PASS: ${{ secrets.GITHUB_TOKEN }}
       GRADLE_ARGS: -Partifactory_user=${{secrets.ARTIFACTORY_USER}} -Partifactory_password=${{secrets.ARTIFACTORY_TOKEN}}
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
 
