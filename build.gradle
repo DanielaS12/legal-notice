@@ -24,10 +24,10 @@ repositories {
 }
 
 dependencies {
-    implementation 'org.springframework:spring-context:5.3.24'
+    implementation 'org.springframework:spring-context:5.3.13'
     implementation 'org.slf4j:slf4j-api:2.0.5'
-    compileOnly 'org.projectlombok:lombok:1.18.26'
-    annotationProcessor 'org.projectlombok:lombok:1.18.26'
+    compileOnly 'org.projectlombok:lombok:1.18.22'
+    annotationProcessor 'org.projectlombok:lombok:1.18.22'
 }
 
 String getFullVersion() {
