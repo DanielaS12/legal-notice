@@ -3,16 +3,14 @@ plugins {
     id 'io.spring.dependency-management' version '1.1.0'
     id "com.jfrog.artifactory" version "4.24.20"
     id "nebula.maven-publish" version "18.1.0"
+    id 'com.palantir.git-version' version '0.12.3'  apply false
 }
 
 version = project.getVersion()
 sourceCompatibility = '11'
-
-configurations {
-    compileOnly {
-        extendsFrom annotationProcessor
-    }
-}
+defaultTasks(":legal-notice-module:clean", ":legal-notice-module:build")
+def artifactoryUser = project.hasProperty('artifactory_user') ? project.artifactory_user : System.getenv('ARTIFACTORY_USER') ?: ''
+def artifactoryToken = project.hasProperty('artifactory_password') ? project.artifactory_password : System.getenv('ARTIFACTORY_TOKEN') ?: ''
 
 repositories {
     mavenCentral()
@@ -25,14 +23,40 @@ repositories {
     }
 }
 
+String getFullVersion() {
+    try {
+        apply plugin: 'com.palantir.git-version'
+        return gitVersion()
+    } catch (Exception e) {
+        project.logger.error(e.getMessage())
+        return System.getProperty("version", "v0.0.0.dirty")
+    }
+}
+version = normalizedVersion()
+
+String normalizedVersion() {
+    String fullVersion = getFullVersion()
+    logger.lifecycle("full version: ${String.valueOf(fullVersion)}")
+    String normalized = fullVersion.split("-").first()
+    def resolvedVersion
+    if (project.hasProperty('stage') && project.stage == "true") {
+        resolvedVersion = "$normalized-stage.${new Date().getTime()}"
+    } else if (fullVersion.contains("dirty")) {
+        resolvedVersion = "$normalized-dev.${new Date().getTime()}"
+    } else {
+        resolvedVersion = fullVersion
+    }
+    logger.lifecycle("Resolved version: ${resolvedVersion}")
+    return resolvedVersion
+}
+
 task printVersionNumber() {
     doLast {
         println("VERSION:" + project.getVersion())
     }
 }
 
-def artifactoryUser = project.hasProperty('artifactory_user') ? project.artifactory_user : System.getenv('ARTIFACTORY_USER') ?: ''
-def artifactoryToken = project.hasProperty('artifactory_password') ? project.artifactory_password : System.getenv('ARTIFACTORY_TOKEN') ?: ''
+
 artifactoryPublish.skip = true
 subprojects { proj ->
     apply plugin: "com.jfrog.artifactory"
@@ -45,9 +69,9 @@ subprojects { proj ->
                     username = artifactoryUser
                     password = artifactoryToken
                 }
-                defaults {
-                    publications 'nebula'
-                }
+//                defaults {
+//                    publications 'nebula'
+//                }
             }
 
         }
