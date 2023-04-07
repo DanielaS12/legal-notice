@@ -24,8 +24,8 @@ repositories {
 }
 
 dependencies {
-    implementation 'org.springframework:spring-context:5.3.13'
-    implementation "org.slf4j:slf4j-api:1.7.32"
+    compileOnly(enforcedPlatform("io.spinnaker.kork:kork-bom:${korkVersion}"))
+    compileOnly "io.spinnaker.kork:kork-plugins-spring-api"
 }
 
 String getFullVersion() {
